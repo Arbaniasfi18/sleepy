@@ -1,0 +1,6 @@
+kepala_tegak
+kepala_miring
+mata_open
+mata_close
+mulut_open
+mulut_close
