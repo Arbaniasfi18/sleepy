@@ -1,5 +1,8 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:sleepy/model/camera.dart';
+import 'package:sleepy/model/flutter_vision.dart';
+import 'package:sleepy/model/push_notification.dart';
 import 'package:sleepy/partials/notification.dart';
 
 class ScanPage extends StatefulWidget {
@@ -12,8 +15,10 @@ class ScanPage extends StatefulWidget {
 class _ScanPageState extends State<ScanPage> {
   String textButton = "OFF";
   Alignment align = Alignment.centerLeft;
-  late CameraController camCon;
   bool loading = true;
+  late CameraController camCon;
+  late CameraImage camImg;
+  List<Map<String, dynamic>> yoloRes = [];
 
   @override
   void initState() {
@@ -24,17 +29,40 @@ class _ScanPageState extends State<ScanPage> {
 
   @override
   void dispose() {
-    camCon.dispose();
     super.dispose();
   }
 
   init() async {
+    // await Camera.init(context);
+    await PushNotification.init();
     List<CameraDescription> cameras = await availableCameras();
     camCon = CameraController(cameras[1], ResolutionPreset.high);
+    await FlutVission.loadModel();
     camCon.initialize().then((value) {
       setState(() {
         loading = false;
       });
+    });
+  }
+
+  Future<void> startDetection(CameraController camCon, CameraImage camImg) async {
+   await camCon.startImageStream((value) async {
+
+    camImg = value;
+
+    final res = await FlutVission.onFrame(camImg);
+    print("#########################################");
+    print(res);
+
+    if (res.isNotEmpty) {
+      setState(() {
+        yoloRes = res;
+      });
+    }
+
+    print("#########################################");
+    print(yoloRes);
+
     }).catchError((error) {
       if (error is CameraException) {
         switch (error.code) {
@@ -48,6 +76,15 @@ class _ScanPageState extends State<ScanPage> {
       }
     });
   }
+
+  Future<void> stopDetection() async {
+    setState(() {
+      yoloRes = [];
+      
+    });
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -108,8 +145,11 @@ class _ScanPageState extends State<ScanPage> {
                   width: 50,
                   height: 50,
                   child: ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         if (textButton == "OFF") {
+                          await PushNotification.instantNotification(
+                              "Ini Peringatan", "Ini Push Notification");
+
                           setState(() {
                             textButton = "ON";
                             align = Alignment.centerRight;
