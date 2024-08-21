@@ -13,11 +13,11 @@ class ScanPage extends StatefulWidget {
 }
 
 class _ScanPageState extends State<ScanPage> {
-  String textButton = "OFF";
-  Alignment align = Alignment.centerLeft;
+  String textButton = "ON";
+  Alignment align = Alignment.centerRight;
   bool loading = true;
-  late CameraController camCon;
-  late CameraImage camImg;
+  // late CameraController camCon;
+  // late CameraImage camImg;
   List<Map<String, dynamic>> yoloRes = [];
 
   @override
@@ -30,61 +30,35 @@ class _ScanPageState extends State<ScanPage> {
   @override
   void dispose() {
     super.dispose();
+    Camera.camCon.dispose();
+    FlutVission.closeYolo();
   }
 
   init() async {
-    // await Camera.init(context);
+    await Camera.init();
     await PushNotification.init();
-    List<CameraDescription> cameras = await availableCameras();
-    camCon = CameraController(cameras[1], ResolutionPreset.high);
     await FlutVission.loadModel();
-    camCon.initialize().then((value) {
-      setState(() {
-        loading = false;
-      });
+  }
+
+  void loadingCallback(bool loading) {
+    setState(() {
+      this.loading = loading;
     });
   }
 
-  Future<void> startDetection(CameraController camCon, CameraImage camImg) async {
-   await camCon.startImageStream((value) async {
+  void setStateCallback(dynamic somethin) {
+    setState(() {
+      somethin;
+    });
+  }
 
-    camImg = value;
-
-    final res = await FlutVission.onFrame(camImg);
-    print("#########################################");
-    print(res);
-
-    if (res.isNotEmpty) {
+  void yoloResCallback(List<Map<String, dynamic>> yoloRes) {
+    if (yoloRes.isNotEmpty) {
       setState(() {
-        yoloRes = res;
+        this.yoloRes = yoloRes;
       });
     }
-
-    print("#########################################");
-    print(yoloRes);
-
-    }).catchError((error) {
-      if (error is CameraException) {
-        switch (error.code) {
-          case 'CameraAccessDenied':
-            cameraAccessNotifDeclined(context);
-            break;
-          default:
-            cameraAccessNotifDeclined(context);
-            break;
-        }
-      }
-    });
   }
-
-  Future<void> stopDetection() async {
-    setState(() {
-      yoloRes = [];
-      
-    });
-  }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -115,18 +89,74 @@ class _ScanPageState extends State<ScanPage> {
                 bottomRight: Radius.circular(25),
                 bottomLeft: Radius.circular(25),
               ),
-              child: AspectRatio(
-                  aspectRatio: 2 / 3,
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.blue,
-                    ),
-                    child: loading
-                        ? const Center(
-                            child:
-                                CircularProgressIndicator(color: Colors.green))
-                        : CameraPreview(camCon),
-                  )),
+              child: Stack(
+                children: [
+                  AspectRatio(
+                      aspectRatio: 2 / 3,
+                      // aspectRatio: Camera.camCon.value.aspectRatio,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[350],
+                        ),
+                        child: loading
+                            ? const Center(
+                                child:
+                                    CircularProgressIndicator(color: Colors.green))
+                            : textButton == "ON"
+                                ? const Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.camera_alt,
+                                        color: Colors.grey,
+                                        size: 50,
+                                      ),
+                                      Text(
+                                        "Camera Paused",
+                                        style: TextStyle(
+                                            color: Colors.grey, fontSize: 25),
+                                      )
+                                    ],
+                                  )
+                                : CameraPreview(Camera.camCon),
+                      )),
+                  // ...displayBoxesAroundRecognizedObjects(MediaQuery.of(context).size),
+                  //   Positioned(
+                  //     bottom: 75,
+                  //     width: MediaQuery.of(context).size.width,
+                  //     child: Container(
+                  //       height: 80,
+                  //       width: 80,
+                  //       decoration: BoxDecoration(
+                  //         shape: BoxShape.circle,
+                  //         border: Border.all(
+                  //             width: 5, color: Colors.white, style: BorderStyle.solid),
+                  //       ),
+                  //       child: isDetecting
+                  //           ? IconButton(
+                  //               onPressed: () async {
+                  //                 stopDetection();
+                  //               },
+                  //               icon: const Icon(
+                  //                 Icons.stop,
+                  //                 color: Colors.red,
+                  //               ),
+                  //               iconSize: 50,
+                  //             )
+                  //           : IconButton(
+                  //               onPressed: () async {
+                  //                 await startDetection();
+                  //               },
+                  //               icon: const Icon(
+                  //                 Icons.play_arrow,
+                  //                 color: Colors.white,
+                  //               ),
+                  //               iconSize: 50,
+                  //             ),
+                  //     ),
+                  //   ),
+                ],
+              ),
             ),
             const SizedBox(
               height: 28,
@@ -147,14 +177,30 @@ class _ScanPageState extends State<ScanPage> {
                   child: ElevatedButton(
                       onPressed: () async {
                         if (textButton == "OFF") {
-                          await PushNotification.instantNotification(
-                              "Ini Peringatan", "Ini Push Notification");
+                          // await PushNotification.instantNotification(
+                          //     "Ini Peringatan", "Ini Push Notification");
+                          Camera.camStop(setStateCallback: setStateCallback);
+
+                          FlutVission.stopDetection(
+                              camCon: Camera.camCon,
+                              setStateCallback: setStateCallback,
+                              yoloResCallback: yoloResCallback);
 
                           setState(() {
                             textButton = "ON";
                             align = Alignment.centerRight;
                           });
                         } else {
+                          await Camera.camStart(context,
+                              loading: loadingCallback);
+
+                          if (context.mounted) {
+                            FlutVission.startDetection(context,
+                                camCon: Camera.camCon,
+                                camImg: Camera.camImg,
+                                yoloResCallback: yoloResCallback);
+                          }
+
                           setState(() {
                             textButton = "OFF";
                             align = Alignment.centerLeft;
@@ -176,3 +222,8 @@ class _ScanPageState extends State<ScanPage> {
     );
   }
 }
+
+
+// List<Widget> displayBoxesAroundRecognizedObjects(Size size) {
+
+// }
