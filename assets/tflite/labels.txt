@@ -1,6 +1,6 @@
-kepala_tegak
 kepala_miring
-mata_open
+kepala_tegak
 mata_close
-mulut_open
+mata_open
 mulut_close
+mulut_open
