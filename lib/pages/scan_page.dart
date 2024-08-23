@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:sleepy/model/camera.dart';
 import 'package:sleepy/model/flutter_vision.dart';
 import 'package:sleepy/model/push_notification.dart';
-import 'package:sleepy/partials/notification.dart';
+// import 'package:sleepy/partials/notification.dart';
 
 class ScanPage extends StatefulWidget {
   const ScanPage({super.key});
@@ -38,6 +38,9 @@ class _ScanPageState extends State<ScanPage> {
     await Camera.init();
     await PushNotification.init();
     await FlutVission.loadModel();
+    setState(() {
+      loading = false;
+    });
   }
 
   void loadingCallback(bool loading) {
@@ -89,74 +92,77 @@ class _ScanPageState extends State<ScanPage> {
                 bottomRight: Radius.circular(25),
                 bottomLeft: Radius.circular(25),
               ),
-              child: Stack(
-                children: [
-                  AspectRatio(
-                      aspectRatio: 2 / 3,
-                      // aspectRatio: Camera.camCon.value.aspectRatio,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[350],
-                        ),
-                        child: loading
-                            ? const Center(
-                                child:
-                                    CircularProgressIndicator(color: Colors.green))
-                            : textButton == "ON"
-                                ? const Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.camera_alt,
-                                        color: Colors.grey,
-                                        size: 50,
-                                      ),
-                                      Text(
-                                        "Camera Paused",
-                                        style: TextStyle(
-                                            color: Colors.grey, fontSize: 25),
-                                      )
-                                    ],
-                                  )
-                                : CameraPreview(Camera.camCon),
-                      )),
-                  // ...displayBoxesAroundRecognizedObjects(MediaQuery.of(context).size),
-                  //   Positioned(
-                  //     bottom: 75,
-                  //     width: MediaQuery.of(context).size.width,
-                  //     child: Container(
-                  //       height: 80,
-                  //       width: 80,
-                  //       decoration: BoxDecoration(
-                  //         shape: BoxShape.circle,
-                  //         border: Border.all(
-                  //             width: 5, color: Colors.white, style: BorderStyle.solid),
-                  //       ),
-                  //       child: isDetecting
-                  //           ? IconButton(
-                  //               onPressed: () async {
-                  //                 stopDetection();
-                  //               },
-                  //               icon: const Icon(
-                  //                 Icons.stop,
-                  //                 color: Colors.red,
-                  //               ),
-                  //               iconSize: 50,
-                  //             )
-                  //           : IconButton(
-                  //               onPressed: () async {
-                  //                 await startDetection();
-                  //               },
-                  //               icon: const Icon(
-                  //                 Icons.play_arrow,
-                  //                 color: Colors.white,
-                  //               ),
-                  //               iconSize: 50,
-                  //             ),
-                  //     ),
-                  //   ),
-                ],
-              ),
+              child: AspectRatio(
+                  aspectRatio: 2 / 3.5,
+                  // aspectRatio: Camera.camCon.value.aspectRatio,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[350],
+                    ),
+                    child: LayoutBuilder(builder: (context, boxConst) {
+                      return Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          loading
+                              ? const Center(
+                                  child: CircularProgressIndicator(
+                                      color: Colors.green))
+                              : textButton == "ON"
+                                  ? const Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.camera_alt,
+                                          color: Colors.grey,
+                                          size: 50,
+                                        ),
+                                        Text(
+                                          "Camera Paused",
+                                          style: TextStyle(
+                                              color: Colors.grey, fontSize: 25),
+                                        )
+                                      ],
+                                    )
+                                  : CameraPreview(Camera.camCon),
+                          ...yoloRes.map((value) {
+                            var iw = Camera.camCon.value.previewSize!.height;
+                            var ih = Camera.camCon.value.previewSize!.width;
+                            var fx = boxConst.maxWidth / iw;
+                            var fy = (iw * fx / (iw / ih)) / ih;
+
+                            // Tampilkan Box
+                            return Positioned(
+                              left: value["box"][0] * fx,
+                              top: value["box"][1] * fy,
+                              width: (value["box"][2] - value["box"][0]) * fx,
+                              height: (value["box"][3] - value["box"][1]) * fy,
+                              child: Container(
+                                decoration: BoxDecoration(border: Border.all(color: Colors.pink, width: 2)),
+                              ),
+                            );
+                          }).toList(),
+                          ...yoloRes.map((value) {
+                            var iw = Camera.camCon.value.previewSize!.height;
+                            var ih = Camera.camCon.value.previewSize!.width;
+                            var fx = boxConst.maxWidth / iw;
+                            var fy = (iw * fx / (iw / ih)) / ih;
+
+                            // Tampilkan Box
+                            return Positioned(
+                              left: value["box"][0] * fx,
+                              top: value["box"][1] * fy - 14,
+                              child: Text("${(value["tag"]).split("_").join(" ")} ${(value["box"][4] * 100).toStringAsFixed(0)}%", style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white,
+                                background: Paint()..color = Colors.pink,
+                              ),)
+                            );
+                          }).toList(),
+                        ],
+                      );
+                    }),
+                  )),
             ),
             const SizedBox(
               height: 28,
@@ -187,9 +193,12 @@ class _ScanPageState extends State<ScanPage> {
                               yoloResCallback: yoloResCallback);
 
                           setState(() {
+                            yoloRes.clear();
                             textButton = "ON";
                             align = Alignment.centerRight;
                           });
+                          print("##############################");
+                          print(yoloRes);
                         } else {
                           await Camera.camStart(context,
                               loading: loadingCallback);
