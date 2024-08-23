@@ -1,4 +1,4 @@
-import 'dart:ffi';
+// import 'dart:ffi';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -40,8 +40,6 @@ class FlutVission {
     required Function yoloResCallback
   }) async {
     await camCon.startImageStream((value) async {
-      print(value.height);
-      print(value.width);
       camImg = value;
 
       final res = await FlutVission.onFrame(value);
@@ -49,8 +47,8 @@ class FlutVission {
       if (res.isNotEmpty) {
         yoloResCallback(res);
       }
-      print("######################################");
-      print("Res = $res");
+      // print("######################################");
+      // print("Res = $res");
 
     }).catchError((error) {
       if (error is CameraException) {
@@ -74,8 +72,6 @@ class FlutVission {
     if (camCon.value.isStreamingImages) {
       setStateCallback(camCon.stopImageStream());
     }
-    List<Map<String, dynamic>> res = [];
-    yoloResCallback(res);
   }
 
   static Future<void> closeYolo() async {

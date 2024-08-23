@@ -1,6 +1,6 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:sleepy/model/flutter_vision.dart';
+// import 'package:sleepy/model/flutter_vision.dart';
 import 'package:sleepy/partials/notification.dart';
 
 class Camera {
