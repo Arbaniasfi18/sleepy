@@ -9,11 +9,11 @@ class Camera {
   static CameraImage? camImg;
 
 
-  static Future<void> init() async {
+  static Future<void> init(int cameraID) async {
 
     List<CameraDescription> cameraDesc = await availableCameras();
 
-    camCon = CameraController(cameraDesc[0], ResolutionPreset.high);
+    camCon = CameraController(cameraDesc[cameraID], ResolutionPreset.high);
 
   }
 
