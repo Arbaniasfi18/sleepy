@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:sleepy/model/push_notification.dart';
+// import 'package:sleepy/model/push_notification.dart';
 import 'package:sleepy/pages/scan_page.dart';
 
 class SplashScreen extends StatefulWidget {

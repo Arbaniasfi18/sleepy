@@ -1,8 +1,10 @@
 // import 'dart:ffi';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_vision/flutter_vision.dart';
+import 'package:sleepy/model/audioplayer.dart';
 import 'package:sleepy/partials/notification.dart';
 
 class FlutVission {
