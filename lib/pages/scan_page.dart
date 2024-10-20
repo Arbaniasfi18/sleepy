@@ -131,7 +131,7 @@ class _ScanPageState extends State<ScanPage> {
     }
   }
 
-  void offCameraState() {
+  void offCameraState() async {
     Camera.camStop(setStateCallback: setStateCallback);
 
     FlutVission.stopDetection(
@@ -144,6 +144,7 @@ class _ScanPageState extends State<ScanPage> {
       textButton = "OFF";
       align = Alignment.centerRight;
     });
+    // await Camera.camCon.dispose();
   }
 
   Future<void> onCameraState(BuildContext context) async {
